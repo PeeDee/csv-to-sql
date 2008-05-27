@@ -40,7 +40,7 @@ end
 
 class CSVLine
 
-  # create a hash with keys from keys array and values from csv line str
+  # create @data - hash with keys from keys array and values from csv line str
   def initialize(keys, csv_line)
     @data = {}
     values = csv_line.chomp!.split(',')
@@ -53,25 +53,33 @@ class NormData < CSVLine # this sub-class is data specific
   
   def initialize(keys, csv_line) # create normalised data structure from CSV data hash
     super(keys, csv_line) # hash of key/value pairs for this line
-    puts "Parsing code #{@data["CODE"]}..."
-    date = Date.parse(@data["QDATE"],true) # parses an excel type date
+    print "Parsing code #{@data["CODE"]}..."
     @code = @data["CODE"]
     @name = @data["NAME"]
-    @report = [Report.new(date, @data["SALQ"], @data["COSTQ"], @data["CPTQ"])]
+    date = Date.parse(@data["QDATE"],true) # parses an excel type date
+    @report = []
+    @report << [ReportData.new(date, @data["SALQ"], @data["COSTQ"], @data["CPTQ"])]
     1.upto(11) do |q| # for each quarter in the data
-      @report << Report.new(date << q * 3, @data["SALQ" + q.to_s], @data["COSTQ" + q.to_s], @data["CPTQ" + q.to_s]) 
+      @report << ReportData.new(date << q * 3, @data["SALQ" + q.to_s], @data["COSTQ" + q.to_s], @data["CPTQ" + q.to_s]) 
     end
-    
+    @report.compact!
+    puts "done."
     rescue: puts "Unable to parse record for code #{@data["CODE"]}..."; return nil
   end
   
   def to_s
-    "\nCode: #{@code} Name: #{@name}\n" + @report.join("\n")
+    "\nCode: #{@code} Name: #{@name}\n" + (
+      if @report.nil? || @report.length == 0 then
+        "  No reports.\n"
+      else
+        @report.join("\n")
+      end
+    )
   end
   
 end
 
-class Report
+class ReportData
 
   def initialize(date, sales, cogs, shares)
     @date = date; @sales = (sales.to_f * 1e6); @cogs = cogs.to_f * 1e6; @shares = shares.to_i * 1e3
