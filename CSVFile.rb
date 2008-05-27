@@ -90,7 +90,9 @@ class NormData < CSVLine # this sub-class is data specific
   
   def to_sql
     sql_data = "# (#{@code}): #{@name}\n"; prefix = "REPLACE INTO `history` (`code`,`name`,`result_date`,`sales`,`gross_profit`,`diluted_shares`)\n"
-    (@reports.each { |r| sql_data << prefix << "  VALUES ('#{@code}', '#{@name}', #{r.to_sql});\n"})
+    @reports.each { |r| 
+      if r.valid? then sql_data << prefix << "  VALUES ('#{@code}', '#{@name}', #{r.to_sql});\n" end
+    }
     sql_data
   end
 
@@ -105,16 +107,16 @@ class ReportData
     if @shares == 0: @shares = nil end
   end
   
+  def valid?
+    !(@shares.nil? || @shares == 0 || @sales == 0)
+  end
+  
   def to_s
     "Date: #{@date.to_s} Sales: #{@sales.to_s} COGS: #{@cogs.to_s} Shares: #{@shares.to_s}"
   end
   
   def to_sql
-    if @shares.nil? then
-      "'#{@date}', '#{@sales}', '#{@sales - @cogs}', DEFAULT"
-    else
-      "'#{@date}', '#{@sales}', '#{@sales - @cogs}', '#{@shares}'"
-    end
+    "'#{@date}', '#{@sales}', '#{@sales - @cogs}', '#{@shares}'"
   end
 
 end
